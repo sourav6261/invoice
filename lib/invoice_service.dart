@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:invoice/model/demo.dart';
 import 'package:invoice/model/log.dart';
 import 'package:invoice/model/model.dart';
 import 'package:invoice/product.dart';
@@ -21,7 +20,7 @@ class InvoiceNonTaxable extends StatefulWidget {
 
 class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
   bool isQty = false;
-  String selectedValue = 'Select from the list'; // Initially selected value
+
   TextEditingController projectNameController = TextEditingController();
   TextEditingController clientAddressController = TextEditingController();
   TextEditingController gstNoController = TextEditingController();
@@ -36,14 +35,9 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
   double hours = 0;
   double unitPrice = 0;
 
-  double _taxRate = 0.18; // 18% tax
-  double _discountRate = 0.12; // 12% discount
-  List<String> dropcdownItems = [
-    'Select from the list',
-    '998314',
-    '998313',
-    '998311',
-  ];
+  double taxRate = 0.18; // 18% tax
+  double discountRate = 0.12; // 12% discount
+
   double subtotal = 0.0;
   @override
   void initState() {
@@ -60,8 +54,8 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
     final countNotifier = context.watch<ProjectProvider>();
 
     double subtotal = projectProvider.totalUnitPrice;
-    double taxAmount = subtotal * _taxRate;
-    double discountAmount = subtotal * _discountRate;
+    double taxAmount = subtotal * taxRate;
+    double discountAmount = subtotal * discountRate;
     double total = subtotal + taxAmount - discountAmount;
     final iconSelectionProvider = Provider.of<ProjectProvider>(context);
     return Scaffold(
@@ -312,21 +306,24 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
                   const SizedBox(
                     height: 5,
                   ),
-                  Container(
-                    decoration: const BoxDecoration(),
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Text("S No."),
-                          const Text("Description"),
-                          Text(
-                            isQty ? 'Hrs' : 'Qty',
-                            style: const TextStyle(fontSize: 18.0),
-                          ),
-                          const Text("Unit Price"),
-                        ],
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Container(
+                      decoration: const BoxDecoration(),
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Text("S No."),
+                            const Text("Description"),
+                            Text(
+                              isQty ? 'Hrs' : 'Qty',
+                              style: const TextStyle(fontSize: 18.0),
+                            ),
+                            const Text("Unit Price"),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -338,9 +335,9 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
                     children: <Widget>[
                       SizedBox(
                         height: 60,
-                        width: 380,
+                        width: MediaQuery.of(context).size.width / 1.1,
                         child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 0),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
                           shrinkWrap: true,
                           itemCount: listController.length,
                           itemBuilder: (context, index) {
@@ -602,18 +599,23 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
                                           unitPrice = 0;
                                         });
                                       }
-                                      Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const OutPut()));
+                                      // Navigator.push(
+                                      //     context,
+                                      //     MaterialPageRoute(
+                                      //         builder: (context) =>
+                                      //             const OutPut()));
                                     },
                                     child: const Text(
                                       "PREVIEW",
                                       style: TextStyle(color: Colors.black),
                                     )),
                                 InkWell(
-                                  onTap: () {},
+                                  onTap: () async {
+                                    if (_formKey.currentState!.validate()) {
+                                      await generatePDF(context);
+                                      await viewPDF(context);
+                                    }
+                                  },
                                   child: Container(
                                     height: 40,
                                     width: 130,
@@ -662,18 +664,18 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
                     },
                     child: const Text('Add Item'),
                   ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        await generatePDF(context);
-                        await viewPDF(context);
-                      }
-                    },
-                    child: const Text('Submit'),
-                  ),
+                  // ElevatedButton(
+                  //   onPressed: () async {
+                  //     if (_formKey.currentState!.validate()) {
+                  //       await generatePDF(context);
+                  //       await viewPDF(context);
+                  //     }
+                  //   },
+                  //   child: const Text('Submit'),
+                  // ),
                   InkWell(
                     onTap: () {
-                      Navigator.push(
+                      Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
                               builder: (context) => HomeScreen()));
@@ -730,17 +732,17 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
 
     final currentDate =
         DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
-    String projectName = '';
-    String clientAddress = '';
-    String description = '';
-    double hours = 0;
-    double unitPrice = 0;
-    double _taxRate = 0.18; // 18% tax
-    double _discountRate = 0.12;
+    // String projectName = '';
+    // String clientAddress = '';
+    // String description = '';
+    // double hours = 0;
+    // double unitPrice = 0;
+    double taxRate = 0.18; // 18% tax
+    double discountRate = 0.12;
 
     double subtotal = userData.totalUnitPrice;
-    double taxAmount = subtotal * _taxRate;
-    double discountAmount = subtotal * _discountRate;
+    double taxAmount = subtotal * taxRate;
+    double discountAmount = subtotal * discountRate;
     double total = subtotal + taxAmount - discountAmount;
 
     pdf.addPage(
@@ -775,7 +777,9 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text('Project Name:${userData.projectName}'),
-                          pw.Text("#0${userData.taxableCount}"),
+                          pw.SizedBox(height: 10.0),
+                          pw.Text("Invoice No:#0${userData.taxableCount}"),
+                          pw.SizedBox(height: 10.0),
                           pw.Text('Address details'),
                           pw.Text("#To:${userData.recipient}"),
                         ],
@@ -786,7 +790,9 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
                         crossAxisAlignment: pw.CrossAxisAlignment.end,
                         children: [
                           pw.Text('HSN Code: ${userData.hsn}'),
+                          pw.SizedBox(height: 10.0),
                           pw.Text('GSTIN: 27AXIPT8068J1ZM'),
+                          pw.SizedBox(height: 10.0),
                           pw.Text(
                               'From: Datart Solutions 203,\n Pentagon 2, Magarpatta,\n Hadapsar, Pune 411028'),
                         ],
@@ -803,11 +809,11 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
                   pw.SizedBox(height: 16.0),
                   pw.Table(
                     columnWidths: {
-                      0: pw.FixedColumnWidth(30), // S.No
-                      1: pw.FixedColumnWidth(200), // Description
-                      2: pw.FixedColumnWidth(50), // Hrs
-                      3: pw.FixedColumnWidth(60), // Unit Price
-                      4: pw.FixedColumnWidth(60), // Total
+                      0: const pw.FixedColumnWidth(30), // S.No
+                      1: const pw.FixedColumnWidth(200), // Description
+                      2: const pw.FixedColumnWidth(50), // Hrs
+                      3: const pw.FixedColumnWidth(60), // Unit Price
+                      4: const pw.FixedColumnWidth(60), // Total
                     },
                     border: pw.TableBorder.all(),
                     // Number of header rows
@@ -857,10 +863,15 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Text('Payment Information:'),
+                  pw.SizedBox(height: 3.0),
                   pw.Text('Bank Name: HDFC Bank'),
+                  pw.SizedBox(height: 3.0),
                   pw.Text('Name: Datart Solutions'),
+                  pw.SizedBox(height: 3.0),
                   pw.Text('Account No: 50200078927660'),
+                  pw.SizedBox(height: 3.0),
                   pw.Text('IFSC Code: HDFC0000486'),
+                  pw.SizedBox(height: 3.0),
                   pw.Text('Account Type: Current'),
                 ],
               ),

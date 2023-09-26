@@ -43,9 +43,7 @@ class _DrawerScreenState extends State<DrawerScreen> {
               Column(
                 children: <Widget>[
                   InkWell(
-                    onTap: () {
-                      print("okkk");
-                    },
+                    onTap: () {},
                     child: const NewRow(
                       text: 'History',
                       icon: Icons.history,

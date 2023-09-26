@@ -6,12 +6,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'model.dart';
 
 class ProjectProvider extends ChangeNotifier {
-  ProjectDetails _projectDetails =
+  ProjectDetails projectDetails =
       ProjectDetails(projectName: '', clientAddress: '');
 
   double get totalUnitPrice {
     double totalPrice = 0;
-    for (var item in _projectDetails.items) {
+    for (var item in projectDetails.items) {
       totalPrice += item.unitPrice;
     }
     return totalPrice;
@@ -26,7 +26,7 @@ class ProjectProvider extends ChangeNotifier {
   }
 
   void addProjectItem(ProjectItem item) {
-    _projectDetails.items.add(item);
+    projectDetails.items.add(item);
     notifyListeners();
   }
 

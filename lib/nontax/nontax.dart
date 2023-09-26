@@ -1,8 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:invoice/model/log.dart';
 import 'package:invoice/model/model.dart';
-import 'package:invoice/nontaxs/nontaxtabel.dart';
 import 'package:invoice/product.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
 class ProjectDetailsScreen extends StatefulWidget {
@@ -11,6 +17,12 @@ class ProjectDetailsScreen extends StatefulWidget {
 }
 
 class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<ProjectProvider>().loadCounts();
+  }
+
   String selectedValue = 'Select from the list'; // Initially selected value
   final _formKey = GlobalKey<FormState>();
   DateTime selectedDate = DateTime.now(); // Initially selected date
@@ -29,13 +41,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
   TextEditingController unitPriceController = TextEditingController();
 
   List<TextEditingController> listController = [TextEditingController()];
-  double _discountRate = 0.12; // 12% discount
-  List<String> dropdownItems = [
-    'Select from the list',
-    '998314',
-    '998313',
-    '998311',
-  ];
+  double discountRate = 0.12; // 12% discount
 
   bool isQty = false;
 
@@ -46,7 +52,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
     final iconSelectionProvider = Provider.of<ProjectProvider>(context);
 
     double subtotal = projectProvider.totalUnitPrice;
-    double discountAmount = subtotal * _discountRate;
+    double discountAmount = subtotal * discountRate;
     double total = subtotal - discountAmount;
 
     return Scaffold(
@@ -89,7 +95,6 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                     ),
                   ],
                 ),
-
                 Center(
                   child: Container(
                     height: 150,
@@ -123,19 +128,32 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                             ),
                             const Text("HSN No."),
                             Center(
-                              child: DropdownButton<String>(
-                                value: selectedValue,
-                                onChanged: (newValue) {
-                                  setState(() {
-                                    selectedValue = newValue!;
-                                  });
-                                },
-                                items: dropdownItems.map((item) {
-                                  return DropdownMenuItem<String>(
-                                    value: item,
-                                    child: Text(item),
-                                  );
-                                }).toList(),
+                              child: SizedBox(
+                                width: 100,
+                                child: Center(
+                                  child: DropdownButtonFormField<String>(
+                                    decoration:
+                                        const InputDecoration(labelText: ''),
+                                    value: Provider.of<ProjectProvider>(context)
+                                        .hsn,
+                                    onChanged: (value) {
+                                      Provider.of<ProjectProvider>(context,
+                                              listen: false)
+                                          .hsn = value!;
+                                    },
+                                    items: <String>[
+                                      '998314',
+                                      '998313',
+                                      '998311'
+                                    ].map<DropdownMenuItem<String>>(
+                                        (String value) {
+                                      return DropdownMenuItem<String>(
+                                        value: value,
+                                        child: Text(value),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -203,7 +221,6 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                 const SizedBox(
                   height: 10,
                 ),
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -265,17 +282,17 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(
                   height: 8,
                 ),
-                Container(
-                  decoration: const BoxDecoration(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Padding(
-                    padding: const EdgeInsets.only(right: 20),
+                    padding: const EdgeInsets.only(right: 15),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        // Text("S No."),
                         const Text("Description"),
                         Text(
                           isQty ? 'Hrs' : 'Qty',
@@ -287,14 +304,14 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   ),
                 ),
                 const SizedBox(
-                  height: 10,
+                  height: 6,
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
                     SizedBox(
                       height: 60,
-                      width: 365,
+                      width: MediaQuery.of(context).size.width / 1.13,
                       child: ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 0),
                         shrinkWrap: true,
@@ -346,7 +363,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                                                 ),
                                                 SizedBox(
                                                   height: 30,
-                                                  width: 45,
+                                                  width: 54,
                                                   child: Flexible(
                                                     child: TextFormField(
                                                       keyboardType:
@@ -436,7 +453,6 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                     ),
                   ],
                 ),
-
                 Center(
                   child: Container(
                     height: 240,
@@ -513,18 +529,23 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                             children: [
                               TextButton(
                                   onPressed: () {
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                const OudtPut()));
+                                    // Navigator.push(
+                                    //     context,
+                                    //     MaterialPageRoute(
+                                    //         builder: (context) =>
+                                    //             const OudtPut()));
                                   },
                                   child: const Text(
                                     "PREVIEW",
                                     style: TextStyle(color: Colors.black),
                                   )),
                               InkWell(
-                                onTap: () {},
+                                onTap: () async {
+                                  if (_formKey.currentState!.validate()) {
+                                    await generatePDF(context);
+                                    await viewPDF(context);
+                                  }
+                                },
                                 child: Container(
                                   height: 40,
                                   width: 130,
@@ -552,11 +573,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                     ),
                   ),
                 ),
-
-                /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
                 const SizedBox(height: 16.0),
-
                 ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
@@ -578,10 +595,18 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   },
                   child: const Text('Add Item'),
                 ),
-
+                // ElevatedButton(
+                //   onPressed: () async {
+                //     if (_formKey.currentState!.validate()) {
+                //       await generatePDF(context);
+                //       await viewPDF(context);
+                //     }
+                //   },
+                //   child: const Text('Submit'),
+                // ),
                 InkWell(
                   onTap: () {
-                    Navigator.push(context,
+                    Navigator.pushReplacement(context,
                         MaterialPageRoute(builder: (context) => HomeScreen()));
                   },
                   child: Container(
@@ -608,6 +633,184 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
     );
   }
 
+  Future<void> generatePDF(BuildContext context) async {
+    final pdf = pw.Document();
+
+    final userData = Provider.of<ProjectProvider>(context, listen: false);
+
+    // Add your logo image to the PDF
+    final logoImage = pw.MemoryImage(
+      (await rootBundle.load('assets/logo-light.png')).buffer.asUint8List(),
+    );
+
+    final currentDate =
+        DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+    // final _formKey = GlobalKey<FormState>();
+    // String projectName = '';
+    // String clientAddress = '';
+    // String description = '';
+    // double hours = 0;
+    // double unitPrice = 0;
+    double discountRate = 0.12; // 12% discount
+    double subtotal = userData.totalUnitPrice;
+    double discountAmount = subtotal * discountRate;
+    double total = subtotal - discountAmount;
+
+    pdf.addPage(
+      pw.Page(
+        build: (context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              // Logo and additional information
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Container(
+                        width: 100.0, // Adjust the width of the logo as needed
+                        child: pw.Image(logoImage),
+                      ),
+                      pw.SizedBox(width: 250.0),
+                      pw.Text(currentDate),
+                    ],
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 50.0),
+              pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('Project Name:${userData.projectName}'),
+                          pw.SizedBox(height: 10.0),
+                          pw.Text("Invoice:#0${userData.nonTaxableCount}"),
+                          pw.Text('Address details'),
+                          pw.SizedBox(height: 10.0),
+                          pw.Text("#To:${userData.recipient}"),
+                        ],
+                      ),
+                    ),
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.end,
+                        children: [
+                          pw.Text('HSN Code: ${userData.hsn}'),
+                          pw.SizedBox(height: 10.0),
+                          pw.Text('GSTIN: 27AXIPT8068J1ZM'),
+                          pw.SizedBox(height: 10.0),
+                          pw.Text(
+                              'From: Datart Solutions 203,\n Pentagon 2, Magarpatta,\n Hadapsar, Pune 411028'),
+                        ],
+                      ),
+                    ),
+                  ]),
+              pw.SizedBox(
+                height: 20.0,
+              ), // Add spacing
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.SizedBox(height: 16.0),
+                  pw.SizedBox(height: 16.0),
+                  pw.Table(
+                    columnWidths: {
+                      0: const pw.FixedColumnWidth(30), // S.No
+                      1: const pw.FixedColumnWidth(200), // Description
+                      2: const pw.FixedColumnWidth(50), // Hrs
+                      3: const pw.FixedColumnWidth(60), // Unit Price
+                      4: const pw.FixedColumnWidth(60), // Total
+                    },
+                    border: pw.TableBorder.all(),
+                    // Number of header rows
+                    children: [
+                      pw.TableRow(
+                        children: [
+                          pw.Text('S.No',
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          pw.Text('Description',
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          pw.Text('Hrs',
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          pw.Text('Unit Price',
+                              style:
+                                  pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ],
+                      ),
+                      ...userData.projectItems.map((item) {
+                        return pw.TableRow(
+                          children: [
+                            pw.Text(
+                                '${userData.projectItems.indexOf(item) + 1}'),
+                            pw.Text(item.description),
+                            pw.Text(item.hours.toString()),
+                            pw.Text(item.unitPrice.toString()),
+                          ],
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                  pw.SizedBox(height: 16.0),
+                  pw.Text(
+                    'Total: ${total.toStringAsFixed(2)}', // Format the total as needed
+                    style: pw.TextStyle(
+                        fontSize: 18.0, fontWeight: pw.FontWeight.bold),
+                  ),
+                ],
+              ),
+
+              pw.SizedBox(height: 20.0), // Add spacing
+
+              // Payment Information (Bank Details)
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text('Payment Information:'),
+                  pw.SizedBox(height: 3.0),
+                  pw.Text('Bank Name: HDFC Bank'),
+                  pw.SizedBox(height: 3.0),
+                  pw.Text('Name: Datart Solutions'),
+                  pw.SizedBox(height: 3.0),
+                  pw.Text('Account No: 50200078927660'),
+                  pw.SizedBox(height: 3.0),
+                  pw.Text('IFSC Code: HDFC0000486'),
+                  pw.SizedBox(height: 3.0),
+                  pw.Text('Account Type: Current'),
+                ],
+              ),
+
+              // Additional information
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.end,
+                children: [
+                  pw.Text('Datart Solutions'),
+                ],
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.end,
+                children: [
+                  pw.Text('Yash Tatiya, Director'),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    final output = await getTemporaryDirectory();
+    final file = File("${output.path}/example.pdf");
+    await file.writeAsBytes(await pdf.save());
+  }
+
   // Function to show the date picker
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -620,6 +823,18 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
       setState(() {
         selectedDate = picked;
       });
+    }
+  }
+
+  Future<void> viewPDF(BuildContext context) async {
+    final pdfFile = File("${(await getTemporaryDirectory()).path}/example.pdf");
+
+    try {
+      await Printing.layoutPdf(
+        onLayout: (format) async => pdfFile.readAsBytes(),
+      );
+    } on PlatformException catch (e) {
+      'Error viewing PDF: $e';
     }
   }
 }
