@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'history.dart';
+
 class DrawerScreen extends StatefulWidget {
   @override
   _DrawerScreenState createState() => _DrawerScreenState();
@@ -43,7 +45,12 @@ class _DrawerScreenState extends State<DrawerScreen> {
               Column(
                 children: <Widget>[
                   InkWell(
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const HistoryPag()));
+                    },
                     child: const NewRow(
                       text: 'History',
                       icon: Icons.history,

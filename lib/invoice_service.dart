@@ -191,7 +191,7 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [Text("Project Details")],
                               ),
-                              ///////////////////////////
+                              //////////////////////////////
                               TextFormField(
                                 controller: projectNameController,
                                 decoration: const InputDecoration(
@@ -206,7 +206,7 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
                                   });
                                 },
                               ),
-                              ///////////////////////////
+                              ////////////////////////////////
                               TextFormField(
                                 controller: clientAddressController,
                                 decoration: const InputDecoration(
@@ -465,35 +465,64 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
                   const SizedBox(
                     height: 15,
                   ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black),
-                    onPressed: () {
-                      setState(() {
-                        listController.add(TextEditingController());
-                      });
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black),
+                        onPressed: () {
+                          setState(() {
+                            listController.add(TextEditingController());
+                          });
 
-                      if (_formKey.currentState!.validate()) {
-                        final projectItem = ProjectItem(
-                          description: _description,
-                          hours: hours,
-                          unitPrice: unitPrice,
-                        );
-                        projectProvider.addProjectItem(projectItem);
-                        projectProvider.addProjectItems(projectItem);
+                          if (_formKey.currentState!.validate()) {
+                            final projectItem = ProjectItem(
+                              description: _description,
+                              hours: hours,
+                              unitPrice: unitPrice,
+                            );
+                            projectProvider.addProjectItem(projectItem);
+                            projectProvider.addProjectItems(projectItem);
 
-                        // Clear the input fields
-                        setState(() {
-                          _description = '';
-                          hours = 0;
-                          unitPrice = 0;
-                        });
-                      }
-                      Provider.of<ProjectProvider>(context, listen: false)
-                          .incrementCounter();
-                    },
-                    child: const Text("Add New"),
+                            // Clear the input fields
+                            setState(() {
+                              _description = '';
+                              hours = 0;
+                              unitPrice = 0;
+                            });
+                          }
+                          Provider.of<ProjectProvider>(context, listen: false)
+                              .incrementCounter();
+                        },
+                        child: const Text("Add New"),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.black),
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            final projectItem = ProjectItem(
+                              description: _description,
+                              hours: hours,
+                              unitPrice: unitPrice,
+                            );
+                            projectProvider.addProjectItem(projectItem);
+                            projectProvider.addProjectItems(projectItem);
+
+                            // // Clear the input fields
+                            // setState(() {
+                            //   _description = '';
+                            //   hours = 0;
+                            //   unitPrice = 0;
+                            // });
+                          }
+                        },
+                        child: const Text('Add Item'),
+                      ),
+                    ],
                   ),
                   Center(
                     child: Container(
@@ -643,27 +672,7 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
                       ),
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        final projectItem = ProjectItem(
-                          description: _description,
-                          hours: hours,
-                          unitPrice: unitPrice,
-                        );
-                        projectProvider.addProjectItem(projectItem);
-                        projectProvider.addProjectItems(projectItem);
 
-                        // Clear the input fields
-                        setState(() {
-                          _description = '';
-                          hours = 0;
-                          unitPrice = 0;
-                        });
-                      }
-                    },
-                    child: const Text('Add Item'),
-                  ),
                   // ElevatedButton(
                   //   onPressed: () async {
                   //     if (_formKey.currentState!.validate()) {
@@ -673,6 +682,9 @@ class _InvoiceNonTaxableState extends State<InvoiceNonTaxable> {
                   //   },
                   //   child: const Text('Submit'),
                   // ),
+                  const SizedBox(
+                    height: 10,
+                  ),
                   InkWell(
                     onTap: () {
                       Navigator.pushReplacement(

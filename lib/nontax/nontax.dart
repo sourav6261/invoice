@@ -425,7 +425,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   ],
                 ),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -450,6 +450,30 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                         }
                       },
                       child: const Text("Add New"),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black),
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          final projectItem = ProjectItem(
+                            description: _description,
+                            hours: _hours,
+                            unitPrice: _unitPrice,
+                          );
+                          projectProvider.addProjectItems(projectItem);
+                          projectProvider.addProjectItem(projectItem);
+
+                          // Clear the input fields
+                          setState(() {
+                            _description = '';
+                            _hours = 0;
+                            _unitPrice = 0;
+                          });
+                        }
+                      },
+                      child: const Text('Add Item'),
                     ),
                   ],
                 ),
@@ -574,27 +598,7 @@ class _ProjectDetailsScreenState extends State<ProjectDetailsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16.0),
-                ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      final projectItem = ProjectItem(
-                        description: _description,
-                        hours: _hours,
-                        unitPrice: _unitPrice,
-                      );
-                      projectProvider.addProjectItems(projectItem);
-                      projectProvider.addProjectItem(projectItem);
 
-                      // Clear the input fields
-                      setState(() {
-                        _description = '';
-                        _hours = 0;
-                        _unitPrice = 0;
-                      });
-                    }
-                  },
-                  child: const Text('Add Item'),
-                ),
                 // ElevatedButton(
                 //   onPressed: () async {
                 //     if (_formKey.currentState!.validate()) {
