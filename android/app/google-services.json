@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "473752858418",
+    "project_id": "testapp-131ad",
+    "storage_bucket": "testapp-131ad.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:473752858418:android:ccc3ba7be5474697a8312b",
+        "android_client_info": {
+          "package_name": "com.example.invoice"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCB53uQPWcFBuKttJOPk65a_bq0OherXDg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
